@@ -505,3 +505,165 @@ body.fullscreen-mode .slides-drawer {
 .primary-btn:hover {
   background: var(--accent-hover);
 }
+
+/* Export Modal Styles */
+.export-card {
+  max-width: 440px;
+  text-align: left;
+}
+
+.export-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.export-icon {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.export-section {
+  margin-bottom: 18px;
+}
+
+.section-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.format-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.format-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-surface);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.format-option input {
+  display: none;
+}
+
+.format-option:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.format-option.active {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 1px var(--accent-color);
+}
+
+.format-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: #3b82f6;
+  color: #fff;
+  min-width: 44px;
+  text-align: center;
+}
+
+.format-badge.pdf {
+  background: #ef4444;
+}
+
+.format-badge.pptx {
+  background: #ea580c;
+}
+
+.format-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.format-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.format-sub {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.scope-options {
+  display: flex;
+  gap: 10px;
+}
+
+.scope-option {
+  flex: 1;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-surface);
+  cursor: pointer;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+
+.scope-option input {
+  display: none;
+}
+
+.scope-option:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.scope-option.active {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: var(--accent-color);
+  color: #fff;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.secondary-btn {
+  flex: 1;
+  height: 42px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-surface);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.secondary-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.modal-actions .primary-btn {
+  flex: 2;
+  height: 42px;
+  margin-top: 0;
+}
+
