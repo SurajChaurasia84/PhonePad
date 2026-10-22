@@ -196,12 +196,6 @@ class SettingsModal extends StatelessWidget {
                               onPressed: () {
                                 controller.clearPcCanvas();
                                 Navigator.of(context).pop();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('PC Whiteboard annotations cleared'),
-                                    duration: Duration(seconds: 1),
-                                  ),
-                                );
                               },
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: const Color(0xFFEF4444),
