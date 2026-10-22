@@ -58,6 +58,7 @@ class DrawingController extends ChangeNotifier {
 
   // Cumulative PC elements (tracks what has been sent to PC so state sync works on refresh)
   final List<dynamic> _pcItems = [];
+  int currentSlideNumber = 1;
 
   DrawingController({
     required this.syncService,
@@ -65,6 +66,7 @@ class DrawingController extends ChangeNotifier {
   }) {
     config = storageService.loadConfig();
     syncService.onPcClearRequested = clearPcCanvas;
+    syncService.onNewSlideRequested = (sNum) => createNewSlide(fromRemote: true, remoteSlideNum: sNum);
   }
 
   List<dynamic> get items => List.unmodifiable(_items);
@@ -426,6 +428,26 @@ class DrawingController extends ChangeNotifier {
   void clearPcCanvas() {
     _pcItems.clear();
     syncService.sendPcCanvasClear();
+    notifyListeners();
+  }
+
+  /// Creates a fresh new slide on both Phone and PC with empty background.
+  void createNewSlide({bool fromRemote = false, int? remoteSlideNum}) {
+    _items.clear();
+    _pcItems.clear();
+    _redoStack.clear();
+    _currentStroke = null;
+    _currentShape = null;
+
+    if (remoteSlideNum != null) {
+      currentSlideNumber = remoteSlideNum;
+    } else {
+      currentSlideNumber++;
+    }
+
+    if (!fromRemote) {
+      syncService.sendNewSlide(currentSlideNumber);
+    }
     notifyListeners();
   }
 
