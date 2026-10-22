@@ -13,7 +13,7 @@ class RightToolbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 44,
+      width: 58,
       decoration: BoxDecoration(
         color: const Color(0xFF161B22),
         border: Border(
@@ -24,7 +24,7 @@ class RightToolbar extends StatelessWidget {
         top: false,
         bottom: false,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -42,7 +42,7 @@ class RightToolbar extends StatelessWidget {
                 onTap: controller.canRedo ? () => controller.redo() : null,
               ),
 
-              const Divider(color: Colors.white12, height: 6),
+              const Divider(color: Colors.white12, height: 10),
 
               // 3. Freehand Pen Tool (Standard / Ballpoint)
               ToolbarButton(
@@ -77,7 +77,7 @@ class RightToolbar extends StatelessWidget {
                 onTap: () => controller.setTool(ActiveTool.eraser),
               ),
 
-              const Divider(color: Colors.white12, height: 6),
+              const Divider(color: Colors.white12, height: 10),
 
               // 6. Pen Style & Palette Modal (Pen Type, Colors, Width)
               ToolbarButton(
