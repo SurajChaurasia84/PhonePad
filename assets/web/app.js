@@ -19,10 +19,13 @@
     slides: [],        // Saved/archived slides { id, timestamp, strokes, thumbnail }
     currentSlideIdx: 1,
     laserPointer: { active: false, x: 0, y: 0 },
-    laserTrail: [],    // Trail of glowing points { x, y, time }
+    laserTrail: [],    // Trail of glowing points { x, y, gestureId, time }
+    laserGestureId: 0,
     laserAnimId: null, // requestAnimationFrame tracker
     pingStartTime: 0,
     latency: null,
+    exportFormat: 'png',
+    exportScope: 'current',
   };
 
   // --- DOM Elements ---
@@ -55,6 +58,18 @@
   const slidesDrawer = document.getElementById('slidesDrawer');
   const btnCloseDrawer = document.getElementById('btnCloseDrawer');
   const slidesThumbnails = document.getElementById('slidesThumbnails');
+
+  // Export Modal Elements
+  const exportModal = document.getElementById('exportModal');
+  const btnCancelExport = document.getElementById('btnCancelExport');
+  const btnConfirmExport = document.getElementById('btnConfirmExport');
+  const exportCurrentNum = document.getElementById('exportCurrentNum');
+  const exportSlideTotal = document.getElementById('exportSlideTotal');
+  const optFormatPng = document.getElementById('optFormatPng');
+  const optFormatPdf = document.getElementById('optFormatPdf');
+  const optFormatPptx = document.getElementById('optFormatPptx');
+  const optScopeCurrent = document.getElementById('optScopeCurrent');
+  const optScopeAll = document.getElementById('optScopeAll');
 
   let ws = null;
   let reconnectTimer = null;
@@ -353,10 +368,20 @@
       id: msg.id,
       color: msg.color,
       width: msg.width,
+      penType: msg.penType || 'pen',
+      opacity: msg.opacity !== undefined ? msg.opacity : 1.0,
       points: [{ x: msg.x, y: msg.y }],
     };
     activeCtx.clearRect(0, 0, canvasWidth, canvasHeight);
-    drawStrokeSegment(activeCtx, state.activeStroke, 0, 0);
+    // Draw initial dot without calling missing functions
+    activeCtx.save();
+    activeCtx.fillStyle = state.activeStroke.color;
+    activeCtx.globalAlpha = state.activeStroke.opacity;
+    const r = (state.activeStroke.width * (canvasWidth / 1000)) / 2;
+    activeCtx.beginPath();
+    activeCtx.arc(msg.x * canvasWidth, msg.y * canvasHeight, Math.max(1, r), 0, Math.PI * 2);
+    activeCtx.fill();
+    activeCtx.restore();
   }
 
   function onStrokePoints(msg) {
@@ -428,6 +453,10 @@
   }
 
   function onPointerMove(msg) {
+    // New gesture when laser pointer starts fresh
+    if (msg.active && !state.laserPointer.active) {
+      state.laserGestureId = (state.laserGestureId || 0) + 1;
+    }
     state.laserPointer.active = msg.active;
     state.laserPointer.x = msg.x;
     state.laserPointer.y = msg.y;
@@ -436,6 +465,7 @@
       state.laserTrail.push({
         x: msg.x,
         y: msg.y,
+        gestureId: state.laserGestureId,
         time: performance.now(),
       });
     }
@@ -459,37 +489,43 @@
 
     laserCtx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-    // 1. Render glowing laser trail connecting recent points
+    // 1. Render glowing pure red laser trail (isolated by gestureId, NO white line, NO cross-jump)
     if (state.laserTrail.length > 1) {
       for (let i = 1; i < state.laserTrail.length; i++) {
         const p1 = state.laserTrail[i - 1];
         const p2 = state.laserTrail[i];
+        if (p1.gestureId !== p2.gestureId) continue;
+
+        const x1 = p1.x * canvasWidth;
+        const y1 = p1.y * canvasHeight;
+        const x2 = p2.x * canvasWidth;
+        const y2 = p2.y * canvasHeight;
+
+        // Discard teleport jump
+        const dist = Math.hypot(x2 - x1, y2 - y1);
+        if (dist > 120) continue;
+
         const age = now - p2.time;
         const progress = Math.max(0, 1 - age / lifespan);
 
         if (progress > 0) {
-          const x1 = p1.x * canvasWidth;
-          const y1 = p1.y * canvasHeight;
-          const x2 = p2.x * canvasWidth;
-          const y2 = p2.y * canvasHeight;
-
           laserCtx.save();
           laserCtx.lineCap = 'round';
           laserCtx.lineJoin = 'round';
 
-          // Outer glowing aura
-          laserCtx.strokeStyle = `rgba(255, 45, 85, ${(0.6 * progress).toFixed(3)})`;
-          laserCtx.lineWidth = 14 * progress * (canvasWidth / 1000);
-          laserCtx.shadowColor = 'rgba(255, 45, 85, 0.9)';
-          laserCtx.shadowBlur = 12 * progress;
+          // Outer glowing red halo
+          laserCtx.strokeStyle = `rgba(255, 23, 68, ${(0.65 * progress).toFixed(3)})`;
+          laserCtx.lineWidth = 12 * progress * (canvasWidth / 1000);
+          laserCtx.shadowColor = 'rgba(255, 23, 68, 0.85)';
+          laserCtx.shadowBlur = 10 * progress;
           laserCtx.beginPath();
           laserCtx.moveTo(x1, y1);
           laserCtx.lineTo(x2, y2);
           laserCtx.stroke();
 
-          // Inner bright white neon core
-          laserCtx.strokeStyle = `rgba(255, 255, 255, ${(0.95 * progress).toFixed(3)})`;
-          laserCtx.lineWidth = 3.5 * progress * (canvasWidth / 1000);
+          // Intense pure red core line (NO white core!)
+          laserCtx.strokeStyle = `rgba(255, 0, 51, ${(0.95 * progress).toFixed(3)})`;
+          laserCtx.lineWidth = 4 * progress * (canvasWidth / 1000);
           laserCtx.shadowBlur = 0;
           laserCtx.beginPath();
           laserCtx.moveTo(x1, y1);
@@ -501,25 +537,25 @@
       }
     }
 
-    // 2. Render glowing laser head dot if pointer is active
+    // 2. Render glowing pure red laser pointer head if finger is active
     if (state.laserPointer.active) {
       const px = state.laserPointer.x * canvasWidth;
       const py = state.laserPointer.y * canvasHeight;
 
       laserCtx.save();
-      const grad = laserCtx.createRadialGradient(px, py, 2, px, py, 20);
-      grad.addColorStop(0, 'rgba(255, 45, 85, 0.95)');
-      grad.addColorStop(0.35, 'rgba(255, 45, 85, 0.5)');
-      grad.addColorStop(1, 'rgba(255, 45, 85, 0)');
+      const grad = laserCtx.createRadialGradient(px, py, 2, px, py, 22);
+      grad.addColorStop(0, 'rgba(255, 23, 68, 0.9)');
+      grad.addColorStop(0.45, 'rgba(255, 23, 68, 0.35)');
+      grad.addColorStop(1, 'rgba(255, 23, 68, 0)');
       laserCtx.fillStyle = grad;
       laserCtx.beginPath();
-      laserCtx.arc(px, py, 20, 0, Math.PI * 2);
+      laserCtx.arc(px, py, 22, 0, Math.PI * 2);
       laserCtx.fill();
 
-      // Bright white core
-      laserCtx.fillStyle = '#ffffff';
+      // Pure red laser core (NO white dot!)
+      laserCtx.fillStyle = '#ff0033';
       laserCtx.beginPath();
-      laserCtx.arc(px, py, 4.5, 0, Math.PI * 2);
+      laserCtx.arc(px, py, 5, 0, Math.PI * 2);
       laserCtx.fill();
       laserCtx.restore();
     }
@@ -597,21 +633,47 @@
   }
 
   function renderStroke(ctx, stroke) {
-    const pts = stroke.points;
-    if (!pts || pts.length === 0) return;
+    const rawPts = stroke.points;
+    if (!rawPts || rawPts.length === 0) return;
+
+    // Filter out micro-jitter points (< 1.2px apart) for silkier curves
+    const pts = [];
+    for (let i = 0; i < rawPts.length; i++) {
+      const p = rawPts[i];
+      if (pts.length === 0) {
+        pts.push(p);
+      } else {
+        const last = pts[pts.length - 1];
+        const dx = (p.x - last.x) * canvasWidth;
+        const dy = (p.y - last.y) * canvasHeight;
+        if (dx * dx + dy * dy >= 1.44 || i === rawPts.length - 1) {
+          pts.push(p);
+        }
+      }
+    }
 
     ctx.save();
-    ctx.lineCap = 'round';
+    ctx.lineCap = stroke.penType === 'highlighter' ? 'square' : 'round';
     ctx.lineJoin = 'round';
     ctx.strokeStyle = stroke.color;
-    ctx.lineWidth = stroke.width * (canvasWidth / 1000); // Scale width proportional to resolution
+    ctx.globalAlpha = stroke.opacity !== undefined ? stroke.opacity : 1.0;
+    ctx.lineWidth = stroke.width * (canvasWidth / 1000);
 
     if (pts.length === 1) {
       const p = pts[0];
       ctx.fillStyle = stroke.color;
       ctx.beginPath();
-      ctx.arc(p.x * canvasWidth, p.y * canvasHeight, ctx.lineWidth / 2, 0, Math.PI * 2);
+      ctx.arc(p.x * canvasWidth, p.y * canvasHeight, Math.max(1, ctx.lineWidth / 2), 0, Math.PI * 2);
       ctx.fill();
+      ctx.restore();
+      return;
+    }
+
+    if (pts.length === 2) {
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x * canvasWidth, pts[0].y * canvasHeight);
+      ctx.lineTo(pts[1].x * canvasWidth, pts[1].y * canvasHeight);
+      ctx.stroke();
       ctx.restore();
       return;
     }
@@ -619,12 +681,16 @@
     ctx.beginPath();
     ctx.moveTo(pts[0].x * canvasWidth, pts[0].y * canvasHeight);
 
-    for (let i = 1; i < pts.length; i++) {
-      const p1 = pts[i - 1];
-      const p2 = pts[i];
-      const midX = ((p1.x + p2.x) / 2) * canvasWidth;
-      const midY = ((p1.y + p2.y) / 2) * canvasHeight;
-      ctx.quadraticCurveTo(p1.x * canvasWidth, p1.y * canvasHeight, midX, midY);
+    const mid0X = ((pts[0].x + pts[1].x) / 2) * canvasWidth;
+    const mid0Y = ((pts[0].y + pts[1].y) / 2) * canvasHeight;
+    ctx.lineTo(mid0X, mid0Y);
+
+    for (let i = 1; i < pts.length - 1; i++) {
+      const pCurrent = pts[i];
+      const pNext = pts[i + 1];
+      const midNextX = ((pCurrent.x + pNext.x) / 2) * canvasWidth;
+      const midNextY = ((pCurrent.y + pNext.y) / 2) * canvasHeight;
+      ctx.quadraticCurveTo(pCurrent.x * canvasWidth, pCurrent.y * canvasHeight, midNextX, midNextY);
     }
 
     const last = pts[pts.length - 1];
@@ -638,9 +704,10 @@
     if (pts.length < 2) return;
 
     ctx.save();
-    ctx.lineCap = 'round';
+    ctx.lineCap = stroke.penType === 'highlighter' ? 'square' : 'round';
     ctx.lineJoin = 'round';
     ctx.strokeStyle = stroke.color;
+    ctx.globalAlpha = stroke.opacity !== undefined ? stroke.opacity : 1.0;
     ctx.lineWidth = stroke.width * (canvasWidth / 1000);
 
     const start = Math.max(1, fromIndex);
@@ -820,21 +887,192 @@
     }
   }
 
-  // --- Export PNG ---
-  function exportHighResPng() {
-    const exportCanvas = document.createElement('canvas');
-    exportCanvas.width = canvasWidth * 2;
-    exportCanvas.height = canvasHeight * 2;
-    const expCtx = exportCanvas.getContext('2d');
-    expCtx.scale(2, 2);
+  // --- Export Whiteboard System (PNG, PDF, PPTX with Current or All Slides) ---
+  function showExportModal() {
+    if (exportCurrentNum) exportCurrentNum.textContent = state.slides.length + 1;
+    if (exportSlideTotal) exportSlideTotal.textContent = state.slides.length + 1;
+    if (exportModal) exportModal.classList.add('active');
+  }
 
-    expCtx.drawImage(bgCanvas, 0, 0, canvasWidth, canvasHeight);
-    expCtx.drawImage(inkCanvas, 0, 0, canvasWidth, canvasHeight);
+  function hideExportModal() {
+    if (exportModal) exportModal.classList.remove('active');
+  }
 
-    const link = document.createElement('a');
-    link.download = `PhonePad_Notes_${new Date().toISOString().slice(0, 10)}.png`;
-    link.href = exportCanvas.toDataURL('image/png');
-    link.click();
+  function renderSlideToCanvas(slideObj, scale = 2) {
+    const outCanvas = document.createElement('canvas');
+    outCanvas.width = canvasWidth * scale;
+    outCanvas.height = canvasHeight * scale;
+    const outCtx = outCanvas.getContext('2d');
+    outCtx.scale(scale, scale);
+
+    // Background
+    outCtx.fillStyle = state.bgColor;
+    outCtx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+    // Grid if enabled
+    if (state.gridMode) {
+      outCtx.save();
+      outCtx.strokeStyle = state.bgColor === '#ffffff' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)';
+      outCtx.lineWidth = 1;
+      const gridSize = 40;
+      for (let x = 0; x <= canvasWidth; x += gridSize) {
+        outCtx.beginPath();
+        outCtx.moveTo(x, 0);
+        outCtx.lineTo(x, canvasHeight);
+        outCtx.stroke();
+      }
+      for (let y = 0; y <= canvasHeight; y += gridSize) {
+        outCtx.beginPath();
+        outCtx.moveTo(0, y);
+        outCtx.lineTo(canvasWidth, y);
+        outCtx.stroke();
+      }
+      outCtx.restore();
+    }
+
+    // Strokes & Shapes
+    const items = slideObj.strokes || [];
+    items.forEach((item) => {
+      if (item.points) {
+        renderStroke(outCtx, item);
+      } else {
+        renderShape(outCtx, item);
+      }
+    });
+
+    return outCanvas;
+  }
+
+  function getCurrentSlideCanvas(scale = 2) {
+    const outCanvas = document.createElement('canvas');
+    outCanvas.width = canvasWidth * scale;
+    outCanvas.height = canvasHeight * scale;
+    const outCtx = outCanvas.getContext('2d');
+    outCtx.scale(scale, scale);
+    outCtx.drawImage(bgCanvas, 0, 0, canvasWidth, canvasHeight);
+    outCtx.drawImage(inkCanvas, 0, 0, canvasWidth, canvasHeight);
+    return outCanvas;
+  }
+
+  async function executeExport() {
+    const format = state.exportFormat || 'png'; // 'png' | 'pdf' | 'pptx'
+    const scope = state.exportScope || 'current';   // 'current' | 'all'
+    const dateStr = new Date().toISOString().slice(0, 10);
+
+    // Collect slides to export
+    const slidesToExport = [];
+    if (scope === 'all') {
+      state.slides.forEach((s) => {
+        slidesToExport.push({
+          num: s.num,
+          canvas: renderSlideToCanvas(s, 2),
+        });
+      });
+      // Add current slide as last slide
+      slidesToExport.push({
+        num: state.slides.length + 1,
+        canvas: getCurrentSlideCanvas(2),
+      });
+    } else {
+      slidesToExport.push({
+        num: state.slides.length + 1,
+        canvas: getCurrentSlideCanvas(2),
+      });
+    }
+
+    hideExportModal();
+
+    if (format === 'png') {
+      slidesToExport.forEach((item, idx) => {
+        setTimeout(() => {
+          const link = document.createElement('a');
+          link.download = `PhonePad_Slide_${item.num}_${dateStr}.png`;
+          link.href = item.canvas.toDataURL('image/png');
+          link.click();
+        }, idx * 250);
+      });
+    } else if (format === 'pdf') {
+      try {
+        if (window.jspdf && window.jspdf.jsPDF) {
+          const orientation = canvasWidth >= canvasHeight ? 'landscape' : 'portrait';
+          const pdf = new window.jspdf.jsPDF({
+            orientation: orientation,
+            unit: 'px',
+            format: [canvasWidth, canvasHeight],
+          });
+
+          slidesToExport.forEach((item, idx) => {
+            if (idx > 0) pdf.addPage([canvasWidth, canvasHeight], orientation);
+            const imgData = item.canvas.toDataURL('image/jpeg', 0.95);
+            pdf.addImage(imgData, 'JPEG', 0, 0, canvasWidth, canvasHeight);
+          });
+
+          pdf.save(`PhonePad_Whiteboard_Notes_${dateStr}.pdf`);
+        } else {
+          // Printable document fallback
+          const printWin = window.open('', '_blank');
+          printWin.document.write('<html><head><title>PhonePad PDF Export</title><style>@page { size: landscape; margin: 0; } body { margin: 0; } img { width: 100vw; height: 100vh; page-break-after: always; display: block; object-fit: contain; background: #000; }</style></head><body>');
+          slidesToExport.forEach((item) => {
+            printWin.document.write(`<img src="${item.canvas.toDataURL('image/jpeg', 0.95)}">`);
+          });
+          printWin.document.write('</body></html>');
+          printWin.document.close();
+          setTimeout(() => {
+            printWin.print();
+          }, 400);
+        }
+      } catch (err) {
+        console.error('PDF export error:', err);
+        alert('Could not export PDF directly. Downloading high-res PNG slides instead.');
+        slidesToExport.forEach((item, idx) => {
+          setTimeout(() => {
+            const link = document.createElement('a');
+            link.download = `PhonePad_Slide_${item.num}_${dateStr}.png`;
+            link.href = item.canvas.toDataURL('image/png');
+            link.click();
+          }, idx * 200);
+        });
+      }
+    } else if (format === 'pptx') {
+      try {
+        if (window.PptxGenJS) {
+          const pptx = new window.PptxGenJS();
+          pptx.layout = (canvasWidth / canvasHeight >= 1.5) ? 'LAYOUT_16x9' : 'LAYOUT_4x3';
+          slidesToExport.forEach((item) => {
+            const slide = pptx.addSlide();
+            slide.addImage({
+              data: item.canvas.toDataURL('image/png'),
+              x: 0,
+              y: 0,
+              w: '100%',
+              h: '100%',
+            });
+          });
+          await pptx.writeFile({ fileName: `PhonePad_Presentation_${dateStr}.pptx` });
+        } else {
+          alert('PPTX module is not accessible offline. Downloading high-res PNG images for PowerPoint insertion.');
+          slidesToExport.forEach((item, idx) => {
+            setTimeout(() => {
+              const link = document.createElement('a');
+              link.download = `PhonePad_Slide_${item.num}_${dateStr}.png`;
+              link.href = item.canvas.toDataURL('image/png');
+              link.click();
+            }, idx * 200);
+          });
+        }
+      } catch (err) {
+        console.error('PPTX export error:', err);
+        alert('Could not generate PPTX file. Downloading high-res PNG slide deck.');
+        slidesToExport.forEach((item, idx) => {
+          setTimeout(() => {
+            const link = document.createElement('a');
+            link.download = `PhonePad_Slide_${item.num}_${dateStr}.png`;
+            link.href = item.canvas.toDataURL('image/png');
+            link.click();
+          }, idx * 200);
+        });
+      }
+    }
   }
 
   // --- Event Listeners ---
@@ -893,8 +1131,43 @@
       }
     });
 
-    // Export button
-    btnExport.addEventListener('click', exportHighResPng);
+    // Export button -> Open modal with options
+    btnExport.addEventListener('click', showExportModal);
+    if (btnCancelExport) btnCancelExport.addEventListener('click', hideExportModal);
+    if (btnConfirmExport) btnConfirmExport.addEventListener('click', executeExport);
+
+    // Export format selectors
+    const formatLabels = [
+      { el: optFormatPng, val: 'png' },
+      { el: optFormatPdf, val: 'pdf' },
+      { el: optFormatPptx, val: 'pptx' },
+    ];
+    formatLabels.forEach(({ el, val }) => {
+      if (!el) return;
+      el.addEventListener('click', () => {
+        state.exportFormat = val;
+        formatLabels.forEach((item) => item.el && item.el.classList.remove('active'));
+        el.classList.add('active');
+        const radio = el.querySelector('input');
+        if (radio) radio.checked = true;
+      });
+    });
+
+    // Export scope selectors
+    const scopeLabels = [
+      { el: optScopeCurrent, val: 'current' },
+      { el: optScopeAll, val: 'all' },
+    ];
+    scopeLabels.forEach(({ el, val }) => {
+      if (!el) return;
+      el.addEventListener('click', () => {
+        state.exportScope = val;
+        scopeLabels.forEach((item) => item.el && item.el.classList.remove('active'));
+        el.classList.add('active');
+        const radio = el.querySelector('input');
+        if (radio) radio.checked = true;
+      });
+    });
 
     // Slide Drawer toggles
     btnToggleSlides.addEventListener('click', () => {
