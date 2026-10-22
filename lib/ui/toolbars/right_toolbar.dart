@@ -10,8 +10,23 @@ class RightToolbar extends StatelessWidget {
 
   const RightToolbar({super.key, required this.controller});
 
+  IconData _iconForPenType(PenType type) {
+    switch (type) {
+      case PenType.pen:
+        return Icons.edit;
+      case PenType.marker:
+        return Icons.draw;
+      case PenType.highlighter:
+        return Icons.border_color;
+      case PenType.brush:
+        return Icons.brush;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final penIcon = _iconForPenType(controller.activePenType);
+
     return Container(
       width: 58,
       decoration: BoxDecoration(
@@ -44,32 +59,32 @@ class RightToolbar extends StatelessWidget {
 
               const Divider(color: Colors.white12, height: 10),
 
-              // 3. Freehand Pen Tool (Standard / Ballpoint)
+              // 3. Dynamic Pen Tool Button:
+              // - Displays icon of the currently selected pen type (Pen, Marker, Highlighter, Brush)
+              // - Tapping directly opens Pen Settings (Type, Color, Width)
               ToolbarButton(
-                icon: Icons.edit,
-                tooltip: 'Pen Tool (${controller.activePenType.label})',
-                isSelected: controller.activeTool == ActiveTool.pen &&
-                    controller.activePenType == PenType.pen,
+                icon: penIcon,
+                tooltip: 'Pen Settings (${controller.activePenType.label})',
+                isSelected: controller.activeTool == ActiveTool.pen,
+                trailingBadge: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: controller.config.penColor,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 1.2),
+                  ),
+                ),
                 onTap: () {
-                  controller.setPenType(PenType.pen);
                   controller.setTool(ActiveTool.pen);
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => ColorPickerModal(controller: controller),
+                  );
                 },
               ),
 
-              // 4. Quick Highlighter Tool (Dedicated 1-tap teaching tool)
-              ToolbarButton(
-                icon: Icons.highlight,
-                tooltip: 'Highlighter (Semi-transparent)',
-                customIconColor: const Color(0xFFFACC15),
-                isSelected: controller.activeTool == ActiveTool.pen &&
-                    controller.activePenType == PenType.highlighter,
-                onTap: () {
-                  controller.setPenType(PenType.highlighter);
-                  controller.setTool(ActiveTool.pen);
-                },
-              ),
-
-              // 5. Stroke-Level Eraser
+              // 4. Stroke-Level Eraser
               ToolbarButton(
                 icon: Icons.auto_fix_normal,
                 tooltip: 'Stroke Eraser',
@@ -79,30 +94,26 @@ class RightToolbar extends StatelessWidget {
 
               const Divider(color: Colors.white12, height: 10),
 
-              // 6. Pen Style & Palette Modal (Pen Type, Colors, Width)
+              // 5. New Slide (+) Button:
+              // Creates a fresh slide on both PC and Phone with empty background
               ToolbarButton(
-                icon: Icons.palette_outlined,
-                tooltip: 'Pen Style, Color & Width',
-                trailingBadge: Container(
-                  width: 7,
-                  height: 7,
-                  decoration: BoxDecoration(
-                    color: controller.config.penColor,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 1.0),
-                  ),
-                ),
+                icon: Icons.add_circle_outline,
+                tooltip: 'New Slide (+) — Slide ${controller.currentSlideNumber + 1}',
+                customIconColor: const Color(0xFF10B981),
                 onTap: () {
-                  showDialog(
-                    context: context,
-                    builder: (ctx) => ColorPickerModal(controller: controller),
+                  controller.createNewSlide();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Slide ${controller.currentSlideNumber} created with empty background'),
+                      duration: const Duration(milliseconds: 1200),
+                    ),
                   );
                 },
               ),
 
-              const Divider(color: Colors.white12, height: 6),
+              const Divider(color: Colors.white12, height: 10),
 
-              // 7. Clear Phone Canvas (Primary Teaching Feature)
+              // 6. Clear Phone Canvas (Primary Teaching Feature)
               ToolbarButton(
                 icon: Icons.cleaning_services_rounded,
                 tooltip: 'Clear Phone Canvas (Keep PC)',
@@ -120,7 +131,7 @@ class RightToolbar extends StatelessWidget {
 
               const SizedBox(height: 2),
 
-              // 8. Clear PC Canvas (Distinct Action)
+              // 7. Clear PC Canvas (Distinct Action)
               ToolbarButton(
                 icon: Icons.desktop_access_disabled,
                 tooltip: 'Clear PC Whiteboard',
