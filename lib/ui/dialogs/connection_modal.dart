@@ -74,13 +74,26 @@ class ConnectionModal extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Connect PC Browser',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        Row(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child: Image.asset(
+                                'assets/icon.png',
+                                width: 24,
+                                height: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Connect PC Browser',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                         IconButton(
                           icon: const Icon(Icons.close, color: Colors.white54, size: 20),
@@ -127,12 +140,6 @@ class ConnectionModal extends StatelessWidget {
                             tooltip: 'Copy URL',
                             onPressed: () {
                               Clipboard.setData(ClipboardData(text: connectionUrl));
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('URL copied to clipboard'),
-                                  duration: Duration(seconds: 1),
-                                ),
-                              );
                             },
                           ),
                         ],
