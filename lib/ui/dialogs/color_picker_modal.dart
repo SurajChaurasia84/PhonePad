@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../models/pen_type.dart';
 import '../../state/drawing_controller.dart';
 
 class ColorPickerModal extends StatefulWidget {
@@ -11,6 +12,7 @@ class ColorPickerModal extends StatefulWidget {
 }
 
 class _ColorPickerModalState extends State<ColorPickerModal> {
+  late PenType _selectedPenType;
   late double _currentWidth;
   late Color _selectedColor;
 
@@ -30,8 +32,22 @@ class _ColorPickerModalState extends State<ColorPickerModal> {
   @override
   void initState() {
     super.initState();
+    _selectedPenType = widget.controller.activePenType;
     _currentWidth = widget.controller.config.penWidth;
     _selectedColor = widget.controller.config.penColor;
+  }
+
+  IconData _iconForPenType(PenType type) {
+    switch (type) {
+      case PenType.pen:
+        return Icons.edit;
+      case PenType.marker:
+        return Icons.draw;
+      case PenType.highlighter:
+        return Icons.highlight;
+      case PenType.brush:
+        return Icons.brush;
+    }
   }
 
   @override
@@ -42,11 +58,11 @@ class _ColorPickerModalState extends State<ColorPickerModal> {
         borderRadius: BorderRadius.circular(16),
         side: const BorderSide(color: Colors.white12),
       ),
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 380, maxHeight: 340),
+        constraints: const BoxConstraints(maxWidth: 390, maxHeight: 335),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -56,10 +72,10 @@ class _ColorPickerModalState extends State<ColorPickerModal> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    'Pen Settings',
+                    'Pen & Brush Settings',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 15,
+                      fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -82,14 +98,71 @@ class _ColorPickerModalState extends State<ColorPickerModal> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      // 1. Pen Type Selector (Pen, Marker, Highlighter, Brush)
+                      const Text(
+                        'Pen Type',
+                        style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: PenType.values.map((type) {
+                          final isSelected = _selectedPenType == type;
+                          return Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 2.5),
+                              child: InkWell(
+                                onTap: () {
+                                  setState(() => _selectedPenType = type);
+                                  widget.controller.setPenType(type);
+                                },
+                                borderRadius: BorderRadius.circular(8),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 150),
+                                  padding: const EdgeInsets.symmetric(vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? const Color(0xFF3B82F6).withValues(alpha: 0.25)
+                                        : Colors.white.withValues(alpha: 0.04),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: isSelected ? const Color(0xFF3B82F6) : Colors.white12,
+                                      width: isSelected ? 1.5 : 1.0,
+                                    ),
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        _iconForPenType(type),
+                                        size: 16,
+                                        color: isSelected ? const Color(0xFF60A5FA) : Colors.white70,
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        type.label,
+                                        style: TextStyle(
+                                          color: isSelected ? const Color(0xFF60A5FA) : Colors.white70,
+                                          fontSize: 10,
+                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      // 2. Color Palette
                       const Text(
                         'Color Palette',
                         style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600),
                       ),
-
-                      const SizedBox(height: 8),
-
-                      // Palette Wrap
+                      const SizedBox(height: 6),
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
@@ -102,8 +175,8 @@ class _ColorPickerModalState extends State<ColorPickerModal> {
                             },
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 150),
-                              width: 34,
-                              height: 34,
+                              width: 32,
+                              height: 32,
                               decoration: BoxDecoration(
                                 color: color,
                                 shape: BoxShape.circle,
@@ -124,7 +197,7 @@ class _ColorPickerModalState extends State<ColorPickerModal> {
                               child: isSelected
                                   ? Icon(
                                       Icons.check,
-                                      size: 18,
+                                      size: 16,
                                       color: color.computeLuminance() > 0.5 ? Colors.black87 : Colors.white,
                                     )
                                   : null,
@@ -133,8 +206,9 @@ class _ColorPickerModalState extends State<ColorPickerModal> {
                         }).toList(),
                       ),
 
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 10),
 
+                      // 3. Stroke Width Slider
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -148,22 +222,19 @@ class _ColorPickerModalState extends State<ColorPickerModal> {
                           ),
                         ],
                       ),
-
-                      const SizedBox(height: 4),
-
-                      // Stroke width preview and slider
                       Row(
                         children: [
                           Container(
-                            width: 28,
-                            height: 28,
+                            width: 24,
+                            height: 24,
                             alignment: Alignment.center,
                             child: Container(
-                              width: _currentWidth.clamp(2.0, 24.0),
-                              height: _currentWidth.clamp(2.0, 24.0),
+                              width: _currentWidth.clamp(2.0, 20.0),
+                              height: _currentWidth.clamp(2.0, 20.0),
                               decoration: BoxDecoration(
-                                color: _selectedColor,
-                                shape: BoxShape.circle,
+                                color: _selectedColor.withValues(alpha: _selectedPenType.defaultOpacity),
+                                shape: _selectedPenType == PenType.highlighter ? BoxShape.rectangle : BoxShape.circle,
+                                borderRadius: _selectedPenType == PenType.highlighter ? BorderRadius.circular(2) : null,
                               ),
                             ),
                           ),
@@ -174,7 +245,7 @@ class _ColorPickerModalState extends State<ColorPickerModal> {
                                 inactiveTrackColor: Colors.white12,
                                 thumbColor: Colors.white,
                                 trackHeight: 3.0,
-                                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7.0),
+                                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6.0),
                               ),
                               child: Slider(
                                 value: _currentWidth,
@@ -194,11 +265,11 @@ class _ColorPickerModalState extends State<ColorPickerModal> {
                 ),
               ),
 
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
 
               SizedBox(
                 width: double.infinity,
-                height: 38,
+                height: 36,
                 child: ElevatedButton(
                   onPressed: () => Navigator.of(context).pop(),
                   style: ElevatedButton.styleFrom(
