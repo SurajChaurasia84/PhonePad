@@ -5,6 +5,7 @@ import '../models/canvas_config.dart';
 import '../models/drawing_point.dart';
 import '../models/drawing_stroke.dart';
 import '../models/drawing_shape.dart';
+import '../models/pen_type.dart';
 import '../services/sync_service.dart';
 import '../services/storage_service.dart';
 import '../utils/geometry_utils.dart';
@@ -12,7 +13,8 @@ import '../utils/geometry_utils.dart';
 class LaserPoint {
   final Offset position;
   final int timestamp;
-  const LaserPoint(this.position, this.timestamp);
+  final int gestureId;
+  const LaserPoint(this.position, this.timestamp, {this.gestureId = 0});
 }
 
 class DrawingController extends ChangeNotifier {
@@ -21,7 +23,9 @@ class DrawingController extends ChangeNotifier {
 
   CanvasConfig config = CanvasConfig();
   ActiveTool activeTool = ActiveTool.pen;
+  PenType activePenType = PenType.pen;
   ShapeType activeShapeType = ShapeType.rectangle;
+  int _laserGestureId = 0;
 
   // Drawing elements
   final List<dynamic> _items = []; // Can contain DrawingStroke or DrawingShape
@@ -83,6 +87,12 @@ class DrawingController extends ChangeNotifier {
   void setShapeType(ShapeType type) {
     activeShapeType = type;
     activeTool = ActiveTool.shape;
+    notifyListeners();
+  }
+
+  void setPenType(PenType type) {
+    activePenType = type;
+    activeTool = ActiveTool.pen;
     notifyListeners();
   }
 
@@ -163,15 +173,28 @@ class DrawingController extends ChangeNotifier {
   void onTouchStart(Offset localPosition, Size canvasSize, {double pressure = 1.0}) {
     if (canvasSize.width <= 0 || canvasSize.height <= 0) return;
 
+    // Safety check: Finalize any lingering unended stroke so lifting finger never connects to the next touch
+    if (_currentStroke != null) {
+      _items.add(_currentStroke);
+      _pcItems.add(_currentStroke);
+      _redoStack.clear();
+      syncService.sendStrokeEnd(_currentStroke!.id);
+      _currentStroke = null;
+    }
+
     final normPoint = DrawingPoint.fromOffset(localPosition, canvasSize, pressure: pressure);
 
     switch (activeTool) {
       case ActiveTool.pen:
         final strokeId = 's_${DateTime.now().microsecondsSinceEpoch}';
+        final effectiveWidth = config.penWidth * activePenType.widthMultiplier;
+        final effectiveOpacity = activePenType.defaultOpacity;
         _currentStroke = DrawingStroke(
           id: strokeId,
           color: config.penColor,
-          width: config.penWidth,
+          width: effectiveWidth,
+          penType: activePenType,
+          opacity: effectiveOpacity,
           points: [normPoint],
         );
         syncService.sendStrokeStart(_currentStroke!);
@@ -199,8 +222,13 @@ class DrawingController extends ChangeNotifier {
 
       case ActiveTool.pointer:
         isPointerActive = true;
+        _laserGestureId++;
         pointerPosition = localPosition;
-        laserTrail.add(LaserPoint(localPosition, DateTime.now().millisecondsSinceEpoch));
+        laserTrail.add(LaserPoint(
+          localPosition,
+          DateTime.now().millisecondsSinceEpoch,
+          gestureId: _laserGestureId,
+        ));
         _startLaserFadeLoop();
         syncService.sendPointerMove(active: true, x: normPoint.x, y: normPoint.y);
         notifyListeners();
@@ -247,7 +275,11 @@ class DrawingController extends ChangeNotifier {
 
       case ActiveTool.pointer:
         pointerPosition = localPosition;
-        laserTrail.add(LaserPoint(localPosition, DateTime.now().millisecondsSinceEpoch));
+        laserTrail.add(LaserPoint(
+          localPosition,
+          DateTime.now().millisecondsSinceEpoch,
+          gestureId: _laserGestureId,
+        ));
         _startLaserFadeLoop();
         syncService.sendPointerMove(active: true, x: normPoint.x, y: normPoint.y);
         notifyListeners();
