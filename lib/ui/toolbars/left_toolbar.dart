@@ -27,7 +27,7 @@ class LeftToolbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 58,
+      width: 44,
       decoration: BoxDecoration(
         color: const Color(0xFF161B22),
         border: Border(
@@ -38,7 +38,7 @@ class LeftToolbar extends StatelessWidget {
         top: false,
         bottom: false,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -74,7 +74,7 @@ class LeftToolbar extends StatelessWidget {
                 },
               ),
 
-              const Divider(color: Colors.white12, height: 12),
+              const Divider(color: Colors.white12, height: 6),
 
               // 2. Pointer Mode (Laser Pointer)
               ToolbarButton(
@@ -92,7 +92,7 @@ class LeftToolbar extends StatelessWidget {
                 onTap: () => controller.setTool(ActiveTool.select),
               ),
 
-              const Divider(color: Colors.white12, height: 12),
+              const Divider(color: Colors.white12, height: 6),
 
               // 4. Straight Line Tool
               ToolbarButton(
@@ -155,7 +155,7 @@ class LeftToolbar extends StatelessWidget {
                 },
               ),
 
-              const Divider(color: Colors.white12, height: 12),
+              const Divider(color: Colors.white12, height: 6),
 
               // 9. Grid Toggle
               ToolbarButton(
@@ -185,7 +185,7 @@ class LeftToolbar extends StatelessWidget {
                 },
               ),
 
-              const Divider(color: Colors.white12, height: 12),
+              const Divider(color: Colors.white12, height: 6),
 
               // 11. Zoom In
               ToolbarButton(
@@ -208,7 +208,7 @@ class LeftToolbar extends StatelessWidget {
                 onTap: controller.zoomScale != 1.0 ? () => controller.resetZoom() : null,
               ),
 
-              const Divider(color: Colors.white12, height: 12),
+              const Divider(color: Colors.white12, height: 6),
 
               // 14. Settings Modal
               ToolbarButton(
