@@ -39,6 +39,12 @@
         <span class="slide-badge">Slide <span id="currentSlideNum">1</span></span>
         <span class="ratio-badge" id="ratioBadge">16:9</span>
       </div>
+      <button class="action-btn new-slide-btn" id="btnNewSlide" title="New Slide with Empty Background (+)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/>
+        </svg>
+        <span>+ New Slide</span>
+      </button>
     </div>
 
     <div class="nav-right">
@@ -160,7 +166,7 @@
             <div class="format-badge pptx">PPTX</div>
             <div class="format-info">
               <span class="format-title">PowerPoint</span>
-              <span class="format-sub">Slide presentation deck</span>
+              <span class="format-sub">Slide presentation</span>
             </div>
           </label>
         </div>
@@ -176,7 +182,7 @@
           </label>
           <label class="scope-option" id="optScopeAll">
             <input type="radio" name="exportScope" value="all">
-            <span>Whole Slide Deck (<span id="exportSlideTotal">1</span> slides)</span>
+            <span>Whole Slide (<span id="exportSlideTotal">1</span> slides)</span>
           </label>
         </div>
       </div>
