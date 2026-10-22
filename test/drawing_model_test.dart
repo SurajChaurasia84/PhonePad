@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:phonepad/models/drawing_point.dart';
 import 'package:phonepad/models/drawing_stroke.dart';
 import 'package:phonepad/models/drawing_shape.dart';
+import 'package:phonepad/models/pen_type.dart';
 import 'package:phonepad/utils/geometry_utils.dart';
 import 'package:phonepad/utils/bezier_smoother.dart';
 import 'package:phonepad/services/storage_service.dart';
@@ -50,6 +51,28 @@ void main() {
       expect(restored.points.length, 2);
       expect(restored.points.first.x, 0.1);
       expect(restored.points.last.y, 0.4);
+    });
+
+    test('DrawingStroke supports PenType and opacity serialization', () {
+      final stroke = DrawingStroke(
+        id: 's_highlighter_1',
+        color: const Color(0xFFFACC15),
+        width: 14.0,
+        penType: PenType.highlighter,
+        opacity: 0.38,
+        points: const [
+          DrawingPoint(x: 0.2, y: 0.2),
+          DrawingPoint(x: 0.5, y: 0.2),
+        ],
+      );
+
+      final json = stroke.toJson();
+      expect(json['penType'], 'highlighter');
+      expect(json['opacity'], 0.38);
+
+      final restored = DrawingStroke.fromJson(json);
+      expect(restored.penType, PenType.highlighter);
+      expect(restored.opacity, 0.38);
     });
 
     test('DrawingStroke bounding box calculates properly', () {
