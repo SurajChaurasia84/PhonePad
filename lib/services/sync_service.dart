@@ -64,6 +64,8 @@ class SyncService {
         id: stroke.id,
         color: stroke.colorHex,
         width: stroke.width,
+        penType: stroke.penType.name,
+        opacity: stroke.opacity,
         x: p0.x,
         y: p0.y,
       ).toJson());
