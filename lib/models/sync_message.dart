@@ -13,6 +13,8 @@ class StrokeStartMessage extends SyncMessage {
   final String id;
   final String color;
   final double width;
+  final String penType;
+  final double opacity;
   final double x;
   final double y;
 
@@ -20,6 +22,8 @@ class StrokeStartMessage extends SyncMessage {
     required this.id,
     required this.color,
     required this.width,
+    this.penType = 'pen',
+    this.opacity = 1.0,
     required this.x,
     required this.y,
   }) : super('stroke_start');
@@ -30,6 +34,8 @@ class StrokeStartMessage extends SyncMessage {
         'id': id,
         'color': color,
         'width': width,
+        'penType': penType,
+        'opacity': opacity,
         'x': x,
         'y': y,
       };
