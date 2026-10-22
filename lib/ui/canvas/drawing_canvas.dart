@@ -3,7 +3,7 @@ import '../../state/drawing_controller.dart';
 import 'canvas_painter.dart';
 import 'grid_painter.dart';
 
-class DrawingCanvas extends StatelessWidget {
+class DrawingCanvas extends StatefulWidget {
   final DrawingController controller;
   final Size canvasSize;
 
@@ -14,18 +14,25 @@ class DrawingCanvas extends StatelessWidget {
   });
 
   @override
+  State<DrawingCanvas> createState() => _DrawingCanvasState();
+}
+
+class _DrawingCanvasState extends State<DrawingCanvas> {
+  int? _activePointerId;
+
+  @override
   Widget build(BuildContext context) {
-    final isDarkBg = controller.config.bgColor.color.computeLuminance() < 0.5;
+    final isDarkBg = widget.controller.config.bgColor.color.computeLuminance() < 0.5;
 
     return Center(
       child: Transform.scale(
-        scale: controller.zoomScale,
+        scale: widget.controller.zoomScale,
         alignment: Alignment.center,
         child: Container(
-          width: canvasSize.width,
-          height: canvasSize.height,
+          width: widget.canvasSize.width,
+          height: widget.canvasSize.height,
           decoration: BoxDecoration(
-            color: controller.config.bgColor.color,
+            color: widget.controller.config.bgColor.color,
             borderRadius: BorderRadius.circular(6),
             boxShadow: [
               BoxShadow(
@@ -41,46 +48,58 @@ class DrawingCanvas extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               // Grid Layer
-              if (controller.config.showGrid)
+              if (widget.controller.config.showGrid)
                 CustomPaint(
                   painter: GridPainter(isDark: isDarkBg),
-                  size: canvasSize,
+                  size: widget.canvasSize,
                 ),
 
               // Drawing Touch Layer
               Listener(
                 behavior: HitTestBehavior.opaque,
                 onPointerDown: (event) {
-                  controller.onTouchStart(
+                  if (_activePointerId != null) {
+                    widget.controller.onTouchEnd(widget.canvasSize);
+                  }
+                  _activePointerId = event.pointer;
+                  widget.controller.onTouchStart(
                     event.localPosition,
-                    canvasSize,
+                    widget.canvasSize,
                     pressure: event.pressure > 0 ? event.pressure : 1.0,
                   );
                 },
                 onPointerMove: (event) {
-                  controller.onTouchUpdate(
-                    event.localPosition,
-                    canvasSize,
-                    pressure: event.pressure > 0 ? event.pressure : 1.0,
-                  );
+                  if (_activePointerId == event.pointer) {
+                    widget.controller.onTouchUpdate(
+                      event.localPosition,
+                      widget.canvasSize,
+                      pressure: event.pressure > 0 ? event.pressure : 1.0,
+                    );
+                  }
                 },
                 onPointerUp: (event) {
-                  controller.onTouchEnd(canvasSize);
+                  if (_activePointerId == event.pointer) {
+                    _activePointerId = null;
+                    widget.controller.onTouchEnd(widget.canvasSize);
+                  }
                 },
                 onPointerCancel: (event) {
-                  controller.onTouchEnd(canvasSize);
+                  if (_activePointerId == event.pointer) {
+                    _activePointerId = null;
+                    widget.controller.onTouchEnd(widget.canvasSize);
+                  }
                 },
                 child: RepaintBoundary(
                   child: CustomPaint(
                     painter: CanvasPainter(
-                      items: controller.items,
-                      activeStroke: controller.currentStroke,
-                      activeShape: controller.currentShape,
-                      isPointerActive: controller.isPointerActive,
-                      pointerPosition: controller.pointerPosition,
-                      laserTrail: controller.laserTrail,
+                      items: widget.controller.items,
+                      activeStroke: widget.controller.currentStroke,
+                      activeShape: widget.controller.currentShape,
+                      isPointerActive: widget.controller.isPointerActive,
+                      pointerPosition: widget.controller.pointerPosition,
+                      laserTrail: widget.controller.laserTrail,
                     ),
-                    size: canvasSize,
+                    size: widget.canvasSize,
                   ),
                 ),
               ),
