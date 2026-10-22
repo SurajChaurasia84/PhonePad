@@ -29,9 +29,9 @@ class LandscapeScaffold extends StatelessWidget {
         builder: (context, _) {
           return LayoutBuilder(
             builder: (context, constraints) {
-              const double leftToolbarWidth = 58.0;
-              const double rightToolbarWidth = 58.0;
-              const double padding = 12.0;
+              const double leftToolbarWidth = 44.0;
+              const double rightToolbarWidth = 44.0;
+              const double padding = 8.0;
 
               final double availableWidth = constraints.maxWidth - leftToolbarWidth - rightToolbarWidth - (padding * 2);
               final double availableHeight = constraints.maxHeight - (padding * 2);
