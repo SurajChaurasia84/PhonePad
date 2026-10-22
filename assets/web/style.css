@@ -203,6 +203,20 @@ html, body {
   background: rgba(239, 68, 68, 0.2);
 }
 
+.action-btn.new-slide-btn {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.35);
+  color: #34d399;
+  font-weight: 600;
+}
+
+.action-btn.new-slide-btn:hover {
+  background: rgba(16, 185, 129, 0.28);
+  border-color: #10b981;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.35);
+}
+
 /* Top Hover Trigger for Fullscreen Mode */
 .top-nav-trigger {
   position: fixed;
