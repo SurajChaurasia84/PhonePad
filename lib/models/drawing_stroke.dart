@@ -1,12 +1,15 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'drawing_point.dart';
+import 'pen_type.dart';
 
 /// Represents a freehand drawing stroke composed of normalized points.
 class DrawingStroke {
   final String id;
   final Color color;
   final double width;
+  final PenType penType;
+  final double opacity;
   final List<DrawingPoint> points;
   final int createdAt;
 
@@ -14,9 +17,12 @@ class DrawingStroke {
     required this.id,
     required this.color,
     required this.width,
+    this.penType = PenType.pen,
+    double? opacity,
     List<DrawingPoint>? points,
     int? createdAt,
-  })  : points = points ?? [],
+  })  : opacity = opacity ?? penType.defaultOpacity,
+        points = points ?? [],
         createdAt = createdAt ?? DateTime.now().millisecondsSinceEpoch;
 
   void addPoint(DrawingPoint point) {
@@ -29,6 +35,8 @@ class DrawingStroke {
         'id': id,
         'color': colorHex,
         'width': double.parse(width.toStringAsFixed(1)),
+        'penType': penType.name,
+        'opacity': double.parse(opacity.toStringAsFixed(2)),
         'points': points.map((p) => p.toJson()).toList(),
       };
 
@@ -37,10 +45,22 @@ class DrawingStroke {
     if (hex.length == 6) hex = 'FF$hex';
     final int colorInt = int.tryParse(hex, radix: 16) ?? 0xFF000000;
 
+    PenType pType = PenType.pen;
+    if (json['penType'] != null) {
+      pType = PenType.values.firstWhere(
+        (t) => t.name == json['penType'],
+        orElse: () => PenType.pen,
+      );
+    }
+
+    final double op = (json['opacity'] as num?)?.toDouble() ?? pType.defaultOpacity;
+
     return DrawingStroke(
       id: json['id'] as String,
       color: Color(colorInt),
       width: (json['width'] as num).toDouble(),
+      penType: pType,
+      opacity: op,
       points: (json['points'] as List<dynamic>?)
               ?.map((p) => DrawingPoint.fromJson(p as Map<String, dynamic>))
               .toList() ??
