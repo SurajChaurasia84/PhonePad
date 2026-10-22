@@ -120,6 +120,77 @@
     </div>
   </div>
 
+  <!-- Export Options Modal -->
+  <div class="modal-overlay" id="exportModal">
+    <div class="modal-card export-card">
+      <div class="modal-header">
+        <div class="modal-icon export-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" x2="12" y1="15" y2="3"/>
+          </svg>
+        </div>
+        <h2>Export Whiteboard Notes</h2>
+        <p class="modal-desc">Select format and slide scope to save your lecture notes</p>
+      </div>
+
+      <!-- Format Selection -->
+      <div class="export-section">
+        <label class="section-label">EXPORT FORMAT</label>
+        <div class="format-options">
+          <label class="format-option active" id="optFormatPng">
+            <input type="radio" name="exportFormat" value="png" checked>
+            <div class="format-badge png">PNG</div>
+            <div class="format-info">
+              <span class="format-title">PNG Image</span>
+              <span class="format-sub">High-resolution graphics</span>
+            </div>
+          </label>
+          <label class="format-option" id="optFormatPdf">
+            <input type="radio" name="exportFormat" value="pdf">
+            <div class="format-badge pdf">PDF</div>
+            <div class="format-info">
+              <span class="format-title">PDF Document</span>
+              <span class="format-sub">Printable lecture document</span>
+            </div>
+          </label>
+          <label class="format-option" id="optFormatPptx">
+            <input type="radio" name="exportFormat" value="pptx">
+            <div class="format-badge pptx">PPTX</div>
+            <div class="format-info">
+              <span class="format-title">PowerPoint</span>
+              <span class="format-sub">Slide presentation deck</span>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Scope Selection -->
+      <div class="export-section">
+        <label class="section-label">SLIDE SCOPE</label>
+        <div class="scope-options">
+          <label class="scope-option active" id="optScopeCurrent">
+            <input type="radio" name="exportScope" value="current" checked>
+            <span>Current Slide (<span id="exportCurrentNum">1</span>)</span>
+          </label>
+          <label class="scope-option" id="optScopeAll">
+            <input type="radio" name="exportScope" value="all">
+            <span>Whole Slide Deck (<span id="exportSlideTotal">1</span> slides)</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="secondary-btn" id="btnCancelExport">Cancel</button>
+        <button type="button" class="primary-btn" id="btnConfirmExport">Download Export</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Client-side export libraries with CDN fallbacks -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
