@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>PhonePad — PC Whiteboard Receiver</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="theme-dark">
+  <!-- Fullscreen Top Hover Zone -->
+  <div class="top-nav-trigger" id="topNavTrigger"></div>
+
+  <!-- Top Bar / Header -->
+  <header class="top-nav" id="topNav">
+    <div class="nav-left">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+            <path d="m15 5 4 4"/>
+          </svg>
+        </div>
+        <span class="brand-name">PhonePad</span>
+        <span class="brand-badge">Receiver</span>
+      </div>
+
+      <div class="connection-status" id="connectionBadge">
+        <span class="status-dot disconnected" id="statusDot"></span>
+        <span class="status-text" id="statusText">Connecting...</span>
+        <span class="ping-text" id="pingText"></span>
+      </div>
+    </div>
+
+    <div class="nav-center">
+      <div class="slide-indicator" id="slideIndicator">
+        <span class="slide-badge">Slide <span id="currentSlideNum">1</span></span>
+        <span class="ratio-badge" id="ratioBadge">16:9</span>
+      </div>
+    </div>
+
+    <div class="nav-right">
+      <button class="action-btn" id="btnToggleSlides" title="Slide History Drawer">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/>
+        </svg>
+        <span>Slides (<span id="slideCountBadge">1</span>)</span>
+      </button>
+
+      <button class="action-btn" id="btnExport" title="Export High-Res PNG">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" x2="12" y1="15" y2="3"/>
+        </svg>
+        <span>Export</span>
+      </button>
+
+      <button class="action-btn danger" id="btnClearPc" title="Clear PC Whiteboard">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+        </svg>
+        <span>Clear Board</span>
+      </button>
+
+      <button class="action-btn icon-only" id="btnFullscreen" title="Toggle Fullscreen (F)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Viewport -->
+  <main class="viewport" id="viewport">
+    <div class="canvas-wrapper" id="canvasWrapper">
+      <!-- Background / Grid Layer -->
+      <canvas id="bgCanvas" class="layer bg-layer"></canvas>
+      <!-- Main Ink Layer -->
+      <canvas id="inkCanvas" class="layer ink-layer"></canvas>
+      <!-- Active In-Progress Stroke Layer -->
+      <canvas id="activeCanvas" class="layer active-layer"></canvas>
+      <!-- Laser Pointer / Cursor Layer -->
+      <canvas id="laserCanvas" class="layer laser-layer"></canvas>
+    </div>
+  </main>
+
+  <!-- Slides Sidebar / Drawer -->
+  <aside class="slides-drawer" id="slidesDrawer">
+    <div class="drawer-header">
+      <h3>Slide Archive</h3>
+      <button class="close-drawer-btn" id="btnCloseDrawer">&times;</button>
+    </div>
+    <div class="drawer-content" id="slidesThumbnails">
+      <!-- Thumbnails populated dynamically -->
+    </div>
+  </aside>
+
+  <!-- Pairing Modal -->
+  <div class="modal-overlay" id="pairingModal">
+    <div class="modal-card">
+      <div class="modal-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+      </div>
+      <h2>Pair with PhonePad</h2>
+      <p class="modal-desc">Enter the 6-digit PIN displayed on your Android phone.</p>
+      
+      <form id="pairingForm" onsubmit="return false;">
+        <div class="pin-inputs">
+          <input type="text" maxlength="6" id="pinInput" placeholder="123456" autofocus autocomplete="off" spellcheck="false">
+        </div>
+        <div class="modal-error" id="pairingError"></div>
+        <button type="submit" class="primary-btn" id="btnConnectPin">Connect Whiteboard</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
