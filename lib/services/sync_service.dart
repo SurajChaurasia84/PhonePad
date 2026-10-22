@@ -6,10 +6,12 @@ import '../models/sync_message.dart';
 import 'embedded_server.dart';
 
 typedef OnPcClearRequested = void Function();
+typedef OnNewSlideRequested = void Function(int slideNumber);
 
 class SyncService {
   final EmbeddedServer server;
   OnPcClearRequested? onPcClearRequested;
+  OnNewSlideRequested? onNewSlideRequested;
 
   // Batching point buffer for smooth, low-latency transmission
   final List<DrawingPoint> _pendingPoints = [];
@@ -24,6 +26,9 @@ class SyncService {
     final type = message['type'] as String?;
     if (type == 'pc_canvas_clear') {
       onPcClearRequested?.call();
+    } else if (type == 'new_slide') {
+      final sNum = (message['slideNumber'] as num?)?.toInt() ?? 1;
+      onNewSlideRequested?.call(sNum);
     }
   }
 
@@ -128,6 +133,10 @@ class SyncService {
 
   void sendPcCanvasClear() {
     server.broadcast(const PcCanvasClearMessage().toJson());
+  }
+
+  void sendNewSlide(int slideNumber) {
+    server.broadcast(NewSlideMessage(slideNumber: slideNumber).toJson());
   }
 
   void dispose() {
