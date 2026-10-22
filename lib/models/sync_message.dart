@@ -152,6 +152,14 @@ class PcCanvasClearMessage extends SyncMessage {
   Map<String, dynamic> toJson() => {'type': type};
 }
 
+class NewSlideMessage extends SyncMessage {
+  final int slideNumber;
+  const NewSlideMessage({required this.slideNumber}) : super('new_slide');
+
+  @override
+  Map<String, dynamic> toJson() => {'type': type, 'slideNumber': slideNumber};
+}
+
 class ConfigUpdateMessage extends SyncMessage {
   final String aspectRatio;
   final String bgColor;
