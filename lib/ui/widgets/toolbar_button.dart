@@ -42,17 +42,17 @@ class ToolbarButton extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(8),
           splashColor: Colors.white12,
           highlightColor: Colors.white10,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
-            width: 35,
-            height: 35,
-            margin: const EdgeInsets.symmetric(vertical: 1.5, horizontal: 1),
+            width: 44,
+            height: 44,
+            margin: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
             decoration: BoxDecoration(
               color: bg,
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(8),
               border: isSelected
                   ? Border.all(color: const Color(0xFF3B82F6).withValues(alpha: 0.7), width: 1.5)
                   : Border.all(color: Colors.white.withValues(alpha: 0.06), width: 1),
@@ -62,13 +62,13 @@ class ToolbarButton extends StatelessWidget {
               children: [
                 Icon(
                   icon,
-                  size: 17,
+                  size: 22,
                   color: isEnabled ? iconColor : Colors.white24,
                 ),
                 if (trailingBadge != null)
                   Positioned(
-                    right: 2.5,
-                    bottom: 2.5,
+                    right: 4,
+                    bottom: 4,
                     child: trailingBadge!,
                   ),
               ],
