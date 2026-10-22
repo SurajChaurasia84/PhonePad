@@ -102,12 +102,6 @@ class RightToolbar extends StatelessWidget {
                 customIconColor: const Color(0xFF10B981),
                 onTap: () {
                   controller.createNewSlide();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Slide ${controller.currentSlideNumber} created with empty background'),
-                      duration: const Duration(milliseconds: 1200),
-                    ),
-                  );
                 },
               ),
 
@@ -120,12 +114,6 @@ class RightToolbar extends StatelessWidget {
                 customIconColor: const Color(0xFFF59E0B),
                 onTap: () {
                   controller.clearPhoneCanvas();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Phone canvas cleared for next slide (PC notes preserved)'),
-                      duration: Duration(milliseconds: 1200),
-                    ),
-                  );
                 },
               ),
 
@@ -159,12 +147,6 @@ class RightToolbar extends StatelessWidget {
                           onPressed: () {
                             controller.clearPcCanvas();
                             Navigator.of(ctx).pop();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('PC Whiteboard cleared'),
-                                duration: Duration(milliseconds: 1200),
-                              ),
-                            );
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFEF4444),
