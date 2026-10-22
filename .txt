@@ -1,0 +1,552 @@
+# PROJECT: PenTab Android Virtual Writing Tablet
+
+## ROLE
+
+Act as a senior Android developer, Flutter engineer, real-time communication engineer, UI/UX designer, and software architect.
+
+Build a complete, functional Android application named PhonePad that turns an Android smartphone into a virtual writing tablet for teaching, presentations, online classes, and screen annotation.
+
+The user does not own a physical pen tablet and wants to use their phone to write on their existing Windows PC without installing or developing a dedicated Windows companion application.
+
+Do not build a UI-only prototype. Implement the actual drawing functionality and a practical connection workflow.
+
+Before implementation, evaluate technical feasibility and choose the simplest reliable architecture that satisfies the requirements without paid infrastructure.
+
+---
+
+# 1. CORE REQUIREMENT
+
+The user opens PhonePad on Android and connects it to a Windows PC.
+
+The phone displays a landscape writing interface with:
+- A central writing canvas.
+- A configurable canvas aspect ratio matching the PC display.
+- A left toolbar containing productivity and navigation tools.
+- A right toolbar containing drawing controls.
+
+The user draws or writes on the phone using a finger.
+
+The strokes should appear in real time on a teaching canvas displayed in the PC's existing web browser.
+
+The user must not need to install a separate Windows application, Windows service, desktop executable, or browser extension.
+
+When the user presses Clear on the phone:
+- Clear the phone's current canvas.
+- Reset the current phone-side drawing session.
+- Allow the user to start writing the next slide or topic immediately.
+
+Do not automatically erase previous annotations from the PC unless the user explicitly selects a separate Clear PC Canvas action.
+
+IMPORTANT: Do not falsely claim that phone drawing will automatically appear inside arbitrary existing Windows applications such as Notepad, PowerPoint, or third-party whiteboards without appropriate integration. Browser-based whiteboard functionality is the guaranteed initial target.
+
+---
+
+# 2. ARCHITECTURE: NO DEDICATED PC APPLICATION
+
+Investigate and implement the following architecture.
+
+## Android client
+
+Build the primary application in Flutter.
+
+Responsibilities:
+- Capture touch input.
+- Render the phone writing canvas.
+- Maintain drawing tools and history.
+- Pair with the PC browser.
+- Transmit drawing events.
+- Display connection status.
+- Support reconnection.
+
+## PC browser
+
+Use an ordinary browser such as Chrome or Microsoft Edge.
+
+The browser opens a dedicated web whiteboard session.
+
+The web whiteboard is the receiver and renderer of drawing events transmitted by the Android app.
+
+Do not require users to install any desktop software.
+
+## Communication
+
+Use a local network connection wherever possible.
+
+Prefer a direct local connection that does not require an account, cloud database, paid hosting, or internet access.
+
+Investigate WebSocket communication and an appropriate connection-discovery mechanism.
+
+IMPORTANT ARCHITECTURAL CONSTRAINT:
+
+A browser cannot generally accept arbitrary inbound connections from a phone merely because the devices share Wi-Fi. A connection endpoint must exist.
+
+Evaluate the following alternatives and choose the most practical one:
+
+1. A temporary local web server hosted by the Android device, with the PC browser connecting to it.
+2. A local browser-accessible endpoint implemented by an existing runtime, if available without installing a dedicated PC application.
+3. A self-contained hosted web receiver, with clear disclosure that internet access and hosting are required.
+
+Prefer the first approach if it can be implemented reliably on Android.
+
+If hosting a web server inside the Android application:
+- Investigate Android network security and local-network restrictions.
+- Support browser access to the phone's local IP address and port.
+- Handle WebSocket upgrades correctly.
+- Ensure the phone's operating system does not unnecessarily terminate the session.
+- Handle browser-origin checks, pairing authorization, reconnection, and network changes.
+- Never expose the unauthenticated drawing endpoint to arbitrary devices.
+- Avoid requiring root access.
+
+Do not assume that a phone-hosted web server will automatically work on every Wi-Fi network. Explain and handle client isolation, firewall restrictions, and network permission issues.
+
+If direct USB communication cannot be supported without PC-side setup, do not promise universal plug-and-play USB functionality.
+
+Provide Wi-Fi connectivity first.
+
+---
+
+# 3. LANDSCAPE UI
+
+The Android app must automatically open in landscape orientation.
+
+Use a clean, premium, minimal interface designed for teaching.
+
+Screen layout:
+
+LEFT TOOLBAR | CENTRAL CANVAS | RIGHT TOOLBAR
+
+Both toolbars must remain visible while the user writes.
+
+The central canvas must preserve its selected aspect ratio rather than stretching to fill the phone.
+
+Default aspect ratio: 16:9.
+
+Additional options:
+- 16:10.
+- 4:3.
+- Custom aspect ratio.
+
+Calculate the available canvas dimensions dynamically based on screen dimensions and toolbar widths.
+
+The canvas should occupy as much central space as possible without overlapping either toolbar.
+
+Keep the application responsive across different Android screen sizes.
+
+---
+
+# 4. CENTRAL CANVAS
+
+The canvas is the main interaction area.
+
+Background options:
+- White.
+- Black.
+- Grey.
+- Green.
+- Custom color.
+
+Use white as the default.
+
+Changing the background must not erase existing strokes.
+
+Implement:
+- Smooth finger drawing.
+- Continuous strokes.
+- Configurable pen width.
+- Multiple colors.
+- Stroke erasing.
+- Undo.
+- Redo.
+- Clear phone canvas.
+- Shape drawing.
+- Text insertion.
+- Grid overlay.
+- Zoom and fit-to-canvas.
+- Canvas coordinate normalization.
+
+Use an appropriate Flutter rendering implementation such as CustomPainter.
+
+Represent strokes as structured data rather than a single flattened image.
+
+Store drawing coordinates relative to the canvas so they can be mapped accurately to the browser whiteboard.
+
+Support high-frequency touch events without unnecessary widget rebuilds or network messages.
+
+Use throttling or batching where appropriate, but do not introduce noticeable drawing latency.
+
+---
+
+# 5. RIGHT TOOLBAR: DRAWING CONTROLS
+
+Arrange these tools vertically.
+
+1. Undo.
+2. Redo.
+3. Pen.
+4. Eraser.
+5. Pen color.
+6. Pen width.
+7. Clear phone canvas.
+8. Additional pen settings.
+
+## Pen
+
+Allow the user to draw with a finger.
+
+Support:
+- Multiple predefined colors.
+- Custom color selection.
+- Adjustable thickness.
+- Clear active-tool indication.
+- Smooth strokes.
+
+## Eraser
+
+Provide stroke-level erasing.
+
+Erasing should remove the intended stroke without accidentally deleting unrelated strokes.
+
+## Undo and redo
+
+Maintain reliable history.
+
+Undo must remove the most recent drawing operation.
+
+Redo must restore an undone operation.
+
+Support history for strokes and shapes.
+
+## Clear phone canvas
+
+This is a primary teaching feature.
+
+When tapped:
+- Clear the phone canvas immediately.
+- Clear the current phone-side drawing history.
+- Reset the active stroke.
+- Keep the PC browser connection alive.
+- Do not disconnect the session.
+- Do not clear the PC whiteboard automatically.
+
+Provide a separate, clearly labelled Clear PC Canvas command for explicitly removing browser-side annotations.
+
+Make sure Clear does not accidentally remove the user's saved documents or unrelated content.
+
+---
+
+# 6. LEFT TOOLBAR: TEACHING TOOLS
+
+Include useful teaching controls.
+
+1. Pointer mode.
+2. Selection tool.
+3. Straight-line tool.
+4. Rectangle tool.
+5. Circle tool.
+6. Arrow tool.
+7. Text tool.
+8. Grid toggle.
+9. Background selector.
+10. Zoom controls.
+11. Fit canvas.
+12. Screenshot/export.
+13. Connection status.
+14. Settings.
+
+Each control must work.
+
+Do not display decorative buttons that have no implementation.
+
+Use compact tooltips or labels where necessary.
+
+Avoid opening full-screen settings pages for simple actions.
+
+---
+
+# 7. PC BROWSER WHITEBOARD
+
+Build a browser-compatible whiteboard receiver.
+
+It must be accessible using an ordinary modern browser without installing a desktop application.
+
+The receiver should:
+- Display a clean 16:9 whiteboard by default.
+- Support full-screen browser use where available.
+- Render incoming strokes in real time.
+- Support the selected pen color and width.
+- Render shapes and text.
+- Receive undo, redo, and clear commands.
+- Preserve previous annotations when the phone canvas is cleared.
+- Provide an explicit Clear PC Canvas command.
+- Display connection status.
+- Display a pairing code or other secure session-verification mechanism.
+- Handle temporary disconnections.
+- Reconstruct the current drawing after reconnecting.
+- Prevent duplicate strokes after reconnection.
+
+Keep the browser interface minimal.
+
+The whiteboard should work without a user account or cloud database.
+
+When possible, preserve the current browser drawing in local browser storage so that an accidental refresh does not immediately destroy the current session.
+
+Document browser limitations honestly.
+
+---
+
+# 8. CONNECTION WORKFLOW
+
+Implement the following user experience.
+
+### Step 1: Open PhonePad
+
+The app opens in landscape orientation.
+
+Display a prominent Connect to PC button.
+
+### Step 2: Start a session
+
+Start the selected local connection mechanism.
+
+Show the connection address and a QR code if supported by the architecture.
+
+Provide manual connection instructions as a fallback.
+
+### Step 3: Open the PC browser
+
+The user opens the provided address in Chrome or Edge.
+
+The browser displays a pairing screen.
+
+### Step 4: Pair securely
+
+Verify that the browser and phone are joining the same session.
+
+Do not accept arbitrary unauthenticated drawing commands.
+
+### Step 5: Start teaching
+
+Once connected:
+- The browser displays the whiteboard.
+- The phone displays its writing canvas.
+- Touch input generates drawing events.
+- The browser renders those events in real time.
+
+### Step 6: Move to the next slide
+
+The user presses Clear on the phone.
+
+The phone canvas becomes blank.
+
+The connection remains active.
+
+The PC's previous annotations remain intact unless explicitly cleared.
+
+### Step 7: Disconnect
+
+Provide a clear disconnect option.
+
+Clean up sockets and temporary resources when the session ends.
+
+---
+
+# 9. DRAWING SYNCHRONIZATION
+
+Design a reliable drawing-event protocol.
+
+Possible event types:
+- session_start
+- stroke_start
+- stroke_points
+- stroke_end
+- stroke_erase
+- undo
+- redo
+- shape_add
+- text_add
+- phone_canvas_clear
+- pc_canvas_clear
+- state_sync
+- session_end
+
+Use unique identifiers for drawing operations.
+
+Ensure that:
+- Each stroke appears exactly once.
+- Incomplete strokes are finalized appropriately.
+- Undo and redo are consistent.
+- Clear commands affect only their intended canvas.
+- Reconnection does not duplicate drawing data.
+- The browser can recover the latest drawing state after a temporary connection loss.
+
+Keep phone canvas state and PC whiteboard state separate.
+
+This separation is essential because the phone must be cleared for the next slide without automatically deleting previous PC annotations.
+
+---
+
+# 10. PERFORMANCE
+
+Optimize for real-time teaching.
+
+Requirements:
+- Low-latency drawing.
+- Efficient stroke rendering.
+- Minimal memory use.
+- No unnecessary network traffic.
+- Smooth operation on mid-range Android phones.
+- Stable landscape layout.
+- No accidental screen rotation during teaching.
+- Appropriate handling of app backgrounding and screen locking.
+
+Use efficient data structures.
+
+Do not transmit a full canvas image for every touch movement.
+
+Transmit incremental drawing events and synchronize full state only when necessary.
+
+If a connection fails, show an in-app message and retain the local drawing when possible.
+
+Do not use native Alert-style popups.
+
+---
+
+# 11. LOCAL STORAGE
+
+Do not require:
+- Firebase.
+- A paid database.
+- User registration.
+- Cloud authentication.
+- A VPS.
+- Paid APIs.
+- A permanent internet connection.
+
+Use local persistence for:
+- Current phone drawing.
+- Tool preferences.
+- Background preference.
+- Canvas aspect ratio.
+- Recent session settings.
+
+If the browser whiteboard uses local browser storage, explain that the stored drawing may be specific to that browser and device.
+
+Do not claim that phone and browser local storage are automatically synchronized.
+
+---
+
+# 12. SECURITY
+
+The connection must be designed for use on local networks.
+
+Implement:
+- Session-specific pairing tokens.
+- Pairing verification.
+- Origin validation where applicable.
+- Safe message parsing.
+- Message size limits.
+- Connection cleanup.
+- No unnecessary external exposure.
+
+Avoid hardcoded permanent pairing secrets.
+
+Explain any limitations associated with plain HTTP and WebSocket traffic on a local network.
+
+Do not transmit personal information or drawing data to third-party servers unless the user explicitly chooses a hosted architecture.
+
+---
+
+# 13. FUTURE COMPATIBILITY
+
+Structure the application so future features can be added without rewriting the drawing engine.
+
+Potential future features:
+- USB connectivity.
+- Pressure-sensitive pen support where hardware and operating systems permit it.
+- Multiple monitor layouts.
+- PDF annotation.
+- Presentation controls.
+- Saving individual teaching sessions.
+- Exporting notes as PNG or PDF.
+- Integration with existing whiteboard platforms.
+- Native Windows pen injection, if a separate integration is later permitted.
+
+Do not implement these future features as fake buttons in the initial release.
+
+---
+
+# 14. TECHNOLOGY CHOICES
+
+Use Flutter and Dart for Android.
+
+Choose appropriate packages only after checking their current compatibility and licensing.
+
+Use a structured drawing model and an efficient rendering architecture.
+
+Implement the browser receiver using standard HTML, CSS, and JavaScript.
+
+Choose an appropriate local transport.
+
+If a lightweight embedded HTTP/WebSocket server is necessary, select a maintained and compatible implementation.
+
+Avoid unnecessary dependencies.
+
+Do not use a cloud backend unless the direct local architecture proves infeasible and the user explicitly approves the alternative.
+
+---
+
+# 15. DEVELOPMENT REQUIREMENTS
+
+Before coding:
+
+1. Inspect the existing project.
+2. Identify the Flutter version and installed dependencies.
+3. Evaluate local Android-hosted server feasibility.
+4. Confirm the communication architecture.
+5. Design the drawing and synchronization data models.
+6. Implement the application incrementally.
+
+Do not replace the entire project unnecessarily.
+
+Preserve existing functionality when modifying an existing project.
+
+Provide complete working code for each required file.
+
+Do not leave TODO comments, placeholder functions, mock connection states, or nonfunctional controls.
+
+Do not claim that PC connectivity works until an actual browser-to-phone connection has been tested.
+
+---
+
+# 16. TESTING AND ACCEPTANCE CRITERIA
+
+The project is accepted only when:
+
+1. The Android app opens in landscape orientation.
+2. The canvas maintains the selected aspect ratio.
+3. The toolbars fit correctly.
+4. Finger drawing works smoothly.
+5. Pen color and width can be changed.
+6. Undo and redo work.
+7. Erasing works.
+8. Clear resets the phone canvas without disconnecting.
+9. Existing PC annotations remain when the phone canvas is cleared.
+10. The PC browser receives and renders drawing events.
+11. The user does not need to install a dedicated PC companion application.
+12. The pairing mechanism works.
+13. Disconnections are handled gracefully.
+14. Reconnection does not duplicate strokes.
+15. The basic workflow works without paid services.
+16. No visible feature is falsely presented as functional.
+17. Setup instructions are understandable to a beginner.
+
+Deliver:
+- Complete Flutter source code.
+- Browser receiver source code.
+- Required dependency configuration.
+- Android permissions and networking configuration.
+- Step-by-step setup instructions.
+- Build and installation instructions.
+- A clear explanation of which features are supported and which have limitations.
+
+The final result must be a working local-first teaching tool, not merely a visual prototype.
