@@ -43,7 +43,7 @@ class PhonePadApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'PhonePad — Android Virtual Writing Tablet',
+      title: 'PhonePad',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,
@@ -142,15 +142,24 @@ class _PhonePadHomeState extends State<PhonePadHome> {
   @override
   Widget build(BuildContext context) {
     if (_isInitializing) {
-      return const Scaffold(
-        backgroundColor: Color(0xFF0D1117),
+      return Scaffold(
+        backgroundColor: const Color(0xFF0D1117),
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CircularProgressIndicator(color: Color(0xFF3B82F6)),
-              SizedBox(height: 16),
-              Text(
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.asset(
+                  'assets/icon.png',
+                  width: 72,
+                  height: 72,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const CircularProgressIndicator(color: Color(0xFFF59E0B)),
+              const SizedBox(height: 16),
+              const Text(
                 'Starting PhonePad Local Server...',
                 style: TextStyle(color: Colors.white70, fontSize: 14),
               ),
