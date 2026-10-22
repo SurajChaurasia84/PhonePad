@@ -54,6 +54,7 @@
   const btnFullscreen = document.getElementById('btnFullscreen');
   const btnExport = document.getElementById('btnExport');
   const btnClearPc = document.getElementById('btnClearPc');
+  const btnNewSlide = document.getElementById('btnNewSlide');
   const btnToggleSlides = document.getElementById('btnToggleSlides');
   const slidesDrawer = document.getElementById('slidesDrawer');
   const btnCloseDrawer = document.getElementById('btnCloseDrawer');
@@ -263,6 +264,10 @@
 
       case 'pc_canvas_clear':
         onPcCanvasClear();
+        break;
+
+      case 'new_slide':
+        onNewSlide(msg);
         break;
 
       case 'state_sync':
@@ -585,6 +590,54 @@
     saveToLocalStorage();
   }
 
+  function onNewSlide(msg) {
+    console.log('[PhonePad] New slide received from phone:', msg);
+    // 1. Archive current slide if it has strokes
+    if (state.strokes.length > 0) {
+      archiveCurrentSlide();
+    }
+    // 2. Reset strokes and ink canvas for empty background
+    state.strokes = [];
+    inkCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+    activeCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+    saveToLocalStorage();
+
+    // 3. Update current slide index and labels
+    if (msg && msg.slideNumber) {
+      state.currentSlideIdx = msg.slideNumber;
+    } else {
+      state.currentSlideIdx = state.slides.length + 1;
+    }
+    if (currentSlideNum) currentSlideNum.textContent = state.currentSlideIdx;
+    if (slideCountBadge) slideCountBadge.textContent = Math.max(state.slides.length, state.currentSlideIdx);
+  }
+
+  function createNewSlideFromPc() {
+    console.log('[PhonePad] Creating new slide from PC');
+    // 1. Archive current slide if it has strokes
+    if (state.strokes.length > 0) {
+      archiveCurrentSlide();
+    }
+    // 2. Reset strokes and ink canvas for empty background
+    state.strokes = [];
+    inkCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+    activeCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+    saveToLocalStorage();
+
+    // 3. Advance slide count
+    state.currentSlideIdx = Math.max(state.slides.length + 1, state.currentSlideIdx + 1);
+    if (currentSlideNum) currentSlideNum.textContent = state.currentSlideIdx;
+    if (slideCountBadge) slideCountBadge.textContent = Math.max(state.slides.length, state.currentSlideIdx);
+
+    // 4. Send new_slide command to phone so both stay synced
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'new_slide',
+        slideNumber: state.currentSlideIdx,
+      }));
+    }
+  }
+
   function onStateSync(msg) {
     console.log('[PhonePad] State sync received');
     if (msg.aspectRatio) setAspectRatio(msg.aspectRatio);
@@ -828,7 +881,7 @@
     // Advance slide count
     state.currentSlideIdx = state.slides.length + 1;
     currentSlideNum.textContent = state.currentSlideIdx;
-    slideCountBadge.textContent = state.slides.length;
+    slideCountBadge.textContent = Math.max(state.slides.length, state.currentSlideIdx);
   }
 
   function updateSlideDrawerUI() {
@@ -1130,6 +1183,11 @@
         }
       }
     });
+
+    // New Slide (+) button on PC
+    if (btnNewSlide) {
+      btnNewSlide.addEventListener('click', createNewSlideFromPc);
+    }
 
     // Export button -> Open modal with options
     btnExport.addEventListener('click', showExportModal);
